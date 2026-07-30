@@ -214,14 +214,7 @@ export default function Home() {
                 placeholder="Email"
                 value={formData.contact_email}
                 onChange={handleChange}
-                className="bg-gray-700 p-3 rounded text-white"
-              />
-              <input
-                type="tel"
-                name="contact_phone"
-                placeholder="Téléphone"
-                value={formData.contact_phone}
-                onChange={handleChange}
+                required
                 className="bg-gray-700 p-3 rounded text-white"
               />
               <select
@@ -256,8 +249,7 @@ export default function Home() {
                     <div className="flex-1">
                       <p className="font-bold text-lg">{quote.prospect_name}</p>
                       <p className="text-gray-400 text-sm">{quote.amount}€ - {quote.sent_date}</p>
-                      <p className="text-gray-400 text-sm">Email: {quote.contact_email || 'N/A'}</p>
-                      <p className="text-gray-400 text-sm">Téléphone: {quote.contact_phone || 'N/A'}</p>
+                      <p className="text-gray-400 text-sm">Email: {quote.contact_email}</p>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                       <select
