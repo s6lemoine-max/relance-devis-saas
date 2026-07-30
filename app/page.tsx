@@ -14,13 +14,17 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [quotes, setQuotes] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState({
+    pending: 0,
+    accepted: 0,
+    refused: 0,
+  });
   const [formData, setFormData] = useState({
     prospect_name: '',
     amount: '',
     sent_date: '',
     status: 'pending',
     contact_email: '',
-    contact_phone: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -76,7 +80,25 @@ export default function Home() {
       .order('created_at', { ascending: false });
 
     if (error) console.error('Error:', error);
-    else setQuotes(data || []);
+    else {
+      setQuotes(data || []);
+      calculateAnalytics(data || []);
+    }
+  };
+
+  const calculateAnalytics = (quotesList: any[]) => {
+    let pending = 0;
+    let accepted = 0;
+    let refused = 0;
+
+    quotesList.forEach((quote) => {
+      const amount = parseFloat(quote.amount) || 0;
+      if (quote.status === 'pending') pending += amount;
+      else if (quote.status === 'accepted') accepted += amount;
+      else if (quote.status === 'refused') refused += amount;
+    });
+
+    setAnalytics({ pending, accepted, refused });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,7 +118,6 @@ export default function Home() {
         sent_date: '',
         status: 'pending',
         contact_email: '',
-        contact_phone: '',
       });
       fetchQuotes();
     }
@@ -175,6 +196,22 @@ export default function Home() {
             >
               Déconnexion
             </button>
+          </div>
+        </div>
+
+        {/* Dashboard Analytics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-yellow-600 bg-opacity-20 border border-yellow-600 p-4 rounded">
+            <p className="text-gray-300 text-sm">En attente</p>
+            <p className="text-3xl font-bold text-yellow-400">{analytics.pending.toFixed(2)}€</p>
+          </div>
+          <div className="bg-green-600 bg-opacity-20 border border-green-600 p-4 rounded">
+            <p className="text-gray-300 text-sm">Acceptés</p>
+            <p className="text-3xl font-bold text-green-400">{analytics.accepted.toFixed(2)}€</p>
+          </div>
+          <div className="bg-red-600 bg-opacity-20 border border-red-600 p-4 rounded">
+            <p className="text-gray-300 text-sm">Refusés</p>
+            <p className="text-3xl font-bold text-red-400">{analytics.refused.toFixed(2)}€</p>
           </div>
         </div>
 
