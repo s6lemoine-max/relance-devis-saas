@@ -9,6 +9,10 @@ const supabase = createClient(
 );
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [quotes, setQuotes] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     prospect_name: '',
@@ -18,10 +22,52 @@ export default function Home() {
     contact_email: '',
     contact_phone: '',
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchQuotes();
+    checkUser();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkUser();
+    });
+    return () => subscription?.unsubscribe();
   }, []);
+
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+    if (user) fetchQuotes();
+  };
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
+      });
+      if (error) alert(error.message);
+      else alert('Vérifiez votre email pour confirmer');
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) alert(error.message);
+    }
+
+    setLoading(false);
+    setEmail('');
+    setPassword('');
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setQuotes([]);
+  };
 
   const fetchQuotes = async () => {
     const { data, error } = await supabase
@@ -29,17 +75,20 @@ export default function Home() {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) console.error('Error fetching quotes:', error);
+    if (error) console.error('Error:', error);
     else setQuotes(data || []);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const { error } = await supabase.from('quotes').insert([formData]);
+    const { error } = await supabase.from('quotes').insert([{ 
+      ...formData, 
+      user_id: user.id 
+    }]);
 
     if (error) {
-      console.error('Error adding quote:', error);
+      console.error('Error:', error);
     } else {
       setFormData({
         prospect_name: '',
@@ -57,16 +106,82 @@ export default function Home() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Relance Devis</h1>
+  const deleteQuote = async (id: number) => {
+    const { error } = await supabase.from('quotes').delete().eq('id', id);
+    if (error) console.error('Error:', error);
+    else fetchQuotes();
+  };
 
-        {/* Formulaire */}
-        <div className="bg-gray-800 p-6 rounded-lg mb-8">
-          <h2 className="text-2xl font-bold mb-6">Ajouter un devis</h2>
+  const updateStatus = async (id: number, newStatus: string) => {
+    const { error } = await supabase
+      .from('quotes')
+      .update({ status: newStatus })
+      .eq('id', id);
+    if (error) console.error('Error:', error);
+    else fetchQuotes();
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
+        <div className="bg-gray-800 p-8 rounded-lg max-w-md w-full">
+          <h1 className="text-3xl font-bold mb-6 text-center">Relance Devis</h1>
+          <form onSubmit={handleAuth} className="space-y-4">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full bg-gray-700 p-3 rounded text-white"
+            />
+            <input
+              type="password"
+              placeholder="Mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full bg-gray-700 p-3 rounded text-white"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-green-600 hover:bg-green-700 p-3 rounded font-bold"
+            >
+              {isSignUp ? 'Créer un compte' : 'Se connecter'}
+            </button>
+          </form>
+          <button
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="w-full mt-4 text-gray-400 hover:text-white"
+          >
+            {isSignUp ? 'Déjà inscrit ?' : 'Créer un compte'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold">Relance Devis</h1>
+          <div className="text-sm text-gray-400 flex flex-col sm:flex-row gap-4">
+            <span>{user.email}</span>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded"
+            >
+              Déconnexion
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-gray-800 p-4 sm:p-6 rounded-lg mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold mb-6">Ajouter un devis</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input
                 type="text"
                 name="prospect_name"
@@ -129,27 +244,37 @@ export default function Home() {
           </form>
         </div>
 
-        {/* Liste des devis */}
         <div>
-          <h2 className="text-2xl font-bold mb-6">Devis</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-6">Devis</h2>
           <div className="space-y-3">
             {quotes.length === 0 ? (
               <p className="text-gray-400">Aucun devis</p>
             ) : (
               quotes.map((quote) => (
-                <div key={quote.id} className="bg-gray-800 p-4 rounded flex justify-between items-center">
-                  <div>
+                <div key={quote.id} className="bg-gray-800 p-4 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex-1">
                     <p className="font-bold">{quote.prospect_name}</p>
                     <p className="text-gray-400 text-sm">{quote.amount}€ - {quote.sent_date}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded text-sm font-bold ${
-                    quote.status === 'pending' ? 'bg-yellow-600' :
-                    quote.status === 'accepted' ? 'bg-green-600' :
-                    'bg-red-600'
-                  }`}>
-                    {quote.status === 'pending' ? 'En attente' :
-                     quote.status === 'accepted' ? 'Accepté' : 'Refusé'}
-                  </span>
+                  <select
+                    value={quote.status}
+                    onChange={(e) => updateStatus(quote.id, e.target.value)}
+                    className={`px-3 py-1 rounded text-sm font-bold ${
+                      quote.status === 'pending' ? 'bg-yellow-600' :
+                      quote.status === 'accepted' ? 'bg-green-600' :
+                      'bg-red-600'
+                    }`}
+                  >
+                    <option value="pending">En attente</option>
+                    <option value="accepted">Accepté</option>
+                    <option value="refused">Refusé</option>
+                  </select>
+                  <button
+                    onClick={() => deleteQuote(quote.id)}
+                    className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
+                  >
+                    Supprimer
+                  </button>
                 </div>
               ))
             )}
