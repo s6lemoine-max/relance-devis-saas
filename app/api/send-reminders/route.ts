@@ -15,7 +15,7 @@ export async function POST() {
       .from('quotes')
       .select('*')
       .eq('status', 'pending')
-      .order('sent_date', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
@@ -23,14 +23,14 @@ export async function POST() {
     let sent = 0;
 
     for (const quote of quotes) {
-      const sentDate = new Date(quote.sent_date);
-      const daysSinceSent = Math.floor(
-        (today.getTime() - sentDate.getTime()) / (1000 * 60 * 60 * 24)
+      const createdDate = new Date(quote.created_at);
+      const daysSinceCreated = Math.floor(
+        (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
       );
 
       // 1ère relance à J+3
       if (
-        daysSinceSent === 3 &&
+        daysSinceCreated === 3 &&
         !quote.first_reminder_sent &&
         quote.contact_email
       ) {
@@ -54,7 +54,7 @@ export async function POST() {
 
       // 2e relance à J+7
       if (
-        daysSinceSent === 7 &&
+        daysSinceCreated === 7 &&
         !quote.second_reminder_sent &&
         quote.contact_email
       ) {
