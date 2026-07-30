@@ -251,30 +251,36 @@ export default function Home() {
               <p className="text-gray-400">Aucun devis</p>
             ) : (
               quotes.map((quote) => (
-                <div key={quote.id} className="bg-gray-800 p-4 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex-1">
-                    <p className="font-bold">{quote.prospect_name}</p>
-                    <p className="text-gray-400 text-sm">{quote.amount}€ - {quote.sent_date}</p>
+                <div key={quote.id} className="bg-gray-800 p-4 rounded flex flex-col gap-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <p className="font-bold text-lg">{quote.prospect_name}</p>
+                      <p className="text-gray-400 text-sm">{quote.amount}€ - {quote.sent_date}</p>
+                      <p className="text-gray-400 text-sm">Email: {quote.contact_email || 'N/A'}</p>
+                      <p className="text-gray-400 text-sm">Téléphone: {quote.contact_phone || 'N/A'}</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                      <select
+                        value={quote.status}
+                        onChange={(e) => updateStatus(quote.id, e.target.value)}
+                        className={`px-3 py-1 rounded text-sm font-bold ${
+                          quote.status === 'pending' ? 'bg-yellow-600' :
+                          quote.status === 'accepted' ? 'bg-green-600' :
+                          'bg-red-600'
+                        }`}
+                      >
+                        <option value="pending">En attente</option>
+                        <option value="accepted">Accepté</option>
+                        <option value="refused">Refusé</option>
+                      </select>
+                      <button
+                        onClick={() => deleteQuote(quote.id)}
+                        className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   </div>
-                  <select
-                    value={quote.status}
-                    onChange={(e) => updateStatus(quote.id, e.target.value)}
-                    className={`px-3 py-1 rounded text-sm font-bold ${
-                      quote.status === 'pending' ? 'bg-yellow-600' :
-                      quote.status === 'accepted' ? 'bg-green-600' :
-                      'bg-red-600'
-                    }`}
-                  >
-                    <option value="pending">En attente</option>
-                    <option value="accepted">Accepté</option>
-                    <option value="refused">Refusé</option>
-                  </select>
-                  <button
-                    onClick={() => deleteQuote(quote.id)}
-                    className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
-                  >
-                    Supprimer
-                  </button>
                 </div>
               ))
             )}
