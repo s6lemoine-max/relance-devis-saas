@@ -13,6 +13,7 @@ export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [quotes, setQuotes] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState({
@@ -51,7 +52,12 @@ export default function Home() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            business_name: businessName,
+          },
+        }
       });
       if (error) alert(error.message);
       else alert('Vérifiez votre email pour confirmer');
@@ -66,6 +72,7 @@ export default function Home() {
     setLoading(false);
     setEmail('');
     setPassword('');
+    setBusinessName('');
   };
 
   const handleLogout = async () => {
@@ -222,6 +229,16 @@ export default function Home() {
           </button>
           <h1 className="text-3xl font-bold mb-6 text-center">DevisTrack</h1>
           <form onSubmit={handleAuth} className="space-y-4">
+            {isSignUp && (
+              <input
+                type="text"
+                placeholder="Nom de votre entreprise (ex: Dupont Plomberie)"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                required
+                className="w-full bg-gray-700 p-3 rounded text-white"
+              />
+            )}
             <input
               type="email"
               placeholder="Email"

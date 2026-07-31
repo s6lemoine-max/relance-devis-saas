@@ -10,7 +10,6 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export async function POST() {
   try {
-    // Récupère les devis en attente qui n'ont pas encore été relancés
     const { data: quotes, error } = await supabase
       .from('quotes')
       .select('*')
@@ -28,20 +27,43 @@ export async function POST() {
         (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
       );
 
+      if (!quote.contact_email) continue;
+      if (daysSinceCreated !== 3 && daysSinceCreated !== 7) continue;
+      if (daysSinceCreated === 3 && quote.first_reminder_sent) continue;
+      if (daysSinceCreated === 7 && quote.second_reminder_sent) continue;
+
+      // Récupère les infos de l'artisan (nom entreprise + email pour reply-to)
+      const { data: artisanData, error: artisanError } = await supabase.auth.admin.getUserById(quote.user_id);
+
+      if (artisanError || !artisanData?.user) {
+        console.error('Artisan not found for quote:', quote.id);
+        continue;
+      }
+
+      const artisanEmail = artisanData.user.email;
+      const businessName = artisanData.user.user_metadata?.business_name || artisanEmail;
+
+      const formattedAmount = new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'EUR',
+      }).format(parseFloat(quote.amount));
+
+      const formattedDate = new Date(quote.sent_date + 'T00:00:00').toLocaleDateString('fr-FR');
+
       // 1ère relance à J+3
-      if (
-        daysSinceCreated === 3 &&
-        !quote.first_reminder_sent &&
-        quote.contact_email
-      ) {
+      if (daysSinceCreated === 3) {
         await resend.emails.send({
-          from: 'noreply@relance-devis.com',
+          from: 'DevisTrack <onboarding@resend.dev>',
           to: quote.contact_email,
-          subject: `Relance : Devis ${quote.prospect_name}`,
-          html: `<p>Bonjour ${quote.prospect_name},</p>
-            <p>Je reviens vers vous concernant le devis de ${quote.amount}€ envoyé le ${quote.sent_date}.</p>
-            <p>Avez-vous des questions ou souhaitez-vous que j'ajuste quelque chose ?</p>
-            <p>Cordialement</p>`,
+          replyTo: artisanEmail,
+          subject: `${businessName} – Suivi de votre devis`,
+          html: `
+            <p>Bonjour ${quote.prospect_name},</p>
+            <p>J'espère que vous allez bien. Je me permets de revenir vers vous au sujet du devis de ${formattedAmount} que je vous ai transmis le ${formattedDate}.</p>
+            <p>N'hésitez pas à me contacter si vous avez la moindre question ou si vous souhaitez que j'ajuste certains points.</p>
+            <p>Je reste à votre disposition.</p>
+            <p>Bien cordialement,<br>${businessName}</p>
+          `,
         });
 
         await supabase
@@ -53,19 +75,18 @@ export async function POST() {
       }
 
       // 2e relance à J+7
-      if (
-        daysSinceCreated === 7 &&
-        !quote.second_reminder_sent &&
-        quote.contact_email
-      ) {
+      if (daysSinceCreated === 7) {
         await resend.emails.send({
-          from: 'noreply@relance-devis.com',
+          from: 'DevisTrack <onboarding@resend.dev>',
           to: quote.contact_email,
-          subject: `2e relance : Devis ${quote.prospect_name}`,
-          html: `<p>Bonjour ${quote.prospect_name},</p>
-            <p>Je relance concernant le devis de ${quote.amount}€ du ${quote.sent_date}.</p>
-            <p>C'est la dernière relance avant expiration. Confirmez-vous votre intérêt ?</p>
-            <p>Cordialement</p>`,
+          replyTo: artisanEmail,
+          subject: `${businessName} – Toujours disponible pour votre projet`,
+          html: `
+            <p>Bonjour ${quote.prospect_name},</p>
+            <p>Je me permets de revenir une dernière fois vers vous concernant le devis de ${formattedAmount} envoyé le ${formattedDate}.</p>
+            <p>Si vous avez besoin de plus de temps ou d'informations complémentaires, n'hésitez pas à me le faire savoir — je suis là pour vous accompagner dans votre projet.</p>
+            <p>Bien cordialement,<br>${businessName}</p>
+          `,
         });
 
         await supabase
