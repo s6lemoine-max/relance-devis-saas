@@ -155,7 +155,7 @@ export default function Home() {
                 Relancez vos devis automatiquement
               </h1>
               <p className="text-lg sm:text-xl text-gray-400 mb-8">
-                Arrêtez de perdre des ventes à cause des oublis. Relancez vos prospects automatiquement à J+3 et J+7. Convertissez plus, sans effort.
+                Arrêtez de perdre des ventes à cause des oublis. DevisTrack relance vos prospects automatiquement à J+3 et J+7. Convertissez plus, sans effort.
               </p>
               <button
                 onClick={() => setShowAuth(true)}
@@ -170,7 +170,7 @@ export default function Home() {
         {/* Features Section */}
         <div className="bg-gray-800 bg-opacity-50">
           <div className="max-w-6xl mx-auto px-4 sm:px-8 py-20">
-            <h2 className="text-3xl font-bold text-center mb-12">Pourquoi choisir Relance Devis ?</h2>
+            <h2 className="text-3xl font-bold text-center mb-12">Pourquoi choisir DevisTrack ?</h2>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
               <div className="bg-gray-900 bg-opacity-50 p-6 rounded-lg">
@@ -220,7 +220,7 @@ export default function Home() {
           >
             ← Retour
           </button>
-          <h1 className="text-3xl font-bold mb-6 text-center">Relance Devis</h1>
+          <h1 className="text-3xl font-bold mb-6 text-center">DevisTrack</h1>
           <form onSubmit={handleAuth} className="space-y-4">
             <input
               type="email"
@@ -262,7 +262,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold">Relance Devis</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold">DevisTrack</h1>
           <div className="text-sm text-gray-400 flex flex-col sm:flex-row gap-4">
             <span>{user.email}</span>
             <button
