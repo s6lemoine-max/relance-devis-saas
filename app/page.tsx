@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -29,6 +29,8 @@ export default function Home() {
     contact_email: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkUser();
@@ -36,6 +38,16 @@ export default function Home() {
       checkUser();
     });
     return () => subscription?.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const checkUser = async () => {
@@ -79,6 +91,7 @@ export default function Home() {
     await supabase.auth.signOut();
     setUser(null);
     setQuotes([]);
+    setShowProfileMenu(false);
   };
 
   const fetchQuotes = async () => {
@@ -149,6 +162,8 @@ export default function Home() {
     if (error) console.error('Error:', error);
     else fetchQuotes();
   };
+
+  const businessName_display = user?.user_metadata?.business_name || null;
 
   // Landing Page
   if (!user && !showAuth) {
@@ -276,34 +291,55 @@ export default function Home() {
 
   // Dashboard
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-8">
+    <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-8 overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold">DevisTrack</h1>
-          <div className="text-sm text-gray-400 flex flex-col sm:flex-row gap-4">
-            <span>{user.email}</span>
+          <h1 className="text-2xl sm:text-4xl font-bold">DevisTrack</h1>
+
+          {/* Profile Button + Dropdown */}
+          <div className="relative" ref={profileMenuRef}>
             <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded"
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition"
             >
-              Déconnexion
+              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center font-bold text-sm">
+                {(businessName_display || user.email)?.charAt(0).toUpperCase()}
+              </div>
+              <span className="hidden sm:inline text-sm">Profil</span>
             </button>
+
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-10 p-4">
+                {businessName_display ? (
+                  <p className="font-bold text-white truncate">{businessName_display}</p>
+                ) : (
+                  <p className="font-bold text-gray-400 italic">Nom d'entreprise non renseigné</p>
+                )}
+                <p className="text-gray-400 text-sm truncate mb-4">{user.email}</p>
+                <button
+                  onClick={handleLogout}
+                  className="w-full bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-sm font-medium transition"
+                >
+                  Déconnexion
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Dashboard Analytics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-gray-800 p-6 rounded-lg">
+          <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
             <p className="text-gray-400 text-sm mb-2">En attente</p>
-            <p className="text-3xl font-bold text-yellow-400">{analytics.pending.toFixed(2)}€</p>
+            <p className="text-2xl sm:text-3xl font-bold text-yellow-400">{analytics.pending.toFixed(2)}€</p>
           </div>
-          <div className="bg-gray-800 p-6 rounded-lg">
+          <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
             <p className="text-gray-400 text-sm mb-2">Acceptés</p>
-            <p className="text-3xl font-bold text-green-400">{analytics.accepted.toFixed(2)}€</p>
+            <p className="text-2xl sm:text-3xl font-bold text-green-400">{analytics.accepted.toFixed(2)}€</p>
           </div>
-          <div className="bg-gray-800 p-6 rounded-lg">
+          <div className="bg-gray-800 p-4 sm:p-6 rounded-lg">
             <p className="text-gray-400 text-sm mb-2">Refusés</p>
-            <p className="text-3xl font-bold text-red-400">{analytics.refused.toFixed(2)}€</p>
+            <p className="text-2xl sm:text-3xl font-bold text-red-400">{analytics.refused.toFixed(2)}€</p>
           </div>
         </div>
 
@@ -318,7 +354,7 @@ export default function Home() {
                 value={formData.prospect_name}
                 onChange={handleChange}
                 required
-                className="bg-gray-700 p-3 rounded text-white"
+                className="bg-gray-700 p-3 rounded text-white w-full"
               />
               <input
                 type="number"
@@ -327,7 +363,7 @@ export default function Home() {
                 value={formData.amount}
                 onChange={handleChange}
                 required
-                className="bg-gray-700 p-3 rounded text-white"
+                className="bg-gray-700 p-3 rounded text-white w-full"
               />
               <input
                 type="date"
@@ -335,7 +371,7 @@ export default function Home() {
                 value={formData.sent_date}
                 onChange={handleChange}
                 required
-                className="bg-gray-700 p-3 rounded text-white"
+                className="bg-gray-700 p-3 rounded text-white w-full"
               />
               <input
                 type="email"
@@ -344,13 +380,13 @@ export default function Home() {
                 value={formData.contact_email}
                 onChange={handleChange}
                 required
-                className="bg-gray-700 p-3 rounded text-white"
+                className="bg-gray-700 p-3 rounded text-white w-full"
               />
               <select
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                className="bg-gray-700 p-3 rounded text-white"
+                className="bg-gray-700 p-3 rounded text-white w-full"
               >
                 <option value="pending">En attente</option>
                 <option value="accepted">Accepté</option>
@@ -374,10 +410,10 @@ export default function Home() {
             ) : (
               quotes.map((quote) => (
                 <div key={quote.id} className="bg-gray-800 p-4 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex-1">
-                    <p className="font-bold">{quote.prospect_name}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold truncate">{quote.prospect_name}</p>
                     <p className="text-gray-400 text-sm">{quote.amount}€ - {quote.sent_date}</p>
-                    <p className="text-gray-400 text-sm">Email: {quote.contact_email}</p>
+                    <p className="text-gray-400 text-sm truncate">Email: {quote.contact_email}</p>
                   </div>
                   <select
                     value={quote.status}
