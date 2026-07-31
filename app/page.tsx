@@ -10,6 +10,7 @@ const supabase = createClient(
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
+  const [showAuth, setShowAuth] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -142,10 +143,83 @@ export default function Home() {
     else fetchQuotes();
   };
 
-  if (!user) {
+  // Landing Page
+  if (!user && !showAuth) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white">
+        {/* Hero Section */}
+        <div className="relative overflow-hidden">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 py-20 sm:py-32">
+            <div className="text-center max-w-3xl mx-auto">
+              <h1 className="text-5xl sm:text-6xl font-bold mb-6">
+                Relancez vos devis automatiquement
+              </h1>
+              <p className="text-xl text-gray-400 mb-8">
+                Arrêtez de perdre des ventes à cause des oublis. Relancez vos prospects automatiquement à J+3 et J+7. Convertissez plus, sans effort.
+              </p>
+              <button
+                onClick={() => setShowAuth(true)}
+                className="bg-green-600 hover:bg-green-700 px-8 py-4 rounded-lg font-bold text-lg transition shadow-lg"
+              >
+                C'est parti →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Section */}
+        <div className="bg-gray-800 bg-opacity-50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 py-20">
+            <h2 className="text-3xl font-bold text-center mb-12">Pourquoi choisir Relance Devis ?</h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+              <div className="bg-gray-900 bg-opacity-50 p-6 rounded-lg">
+                <div className="text-4xl mb-4">⚡</div>
+                <h3 className="text-xl font-bold mb-3">Automatisé</h3>
+                <p className="text-gray-400">Vos devis sont relancés automatiquement. Plus d'oubli, plus de perte de temps.</p>
+              </div>
+
+              <div className="bg-gray-900 bg-opacity-50 p-6 rounded-lg">
+                <div className="text-4xl mb-4">📊</div>
+                <h3 className="text-xl font-bold mb-3">Suivi en temps réel</h3>
+                <p className="text-gray-400">Voyez exactement combien vous gagnez grâce aux relances automatiques.</p>
+              </div>
+
+              <div className="bg-gray-900 bg-opacity-50 p-6 rounded-lg">
+                <div className="text-4xl mb-4">🎯</div>
+                <h3 className="text-xl font-bold mb-3">Simple à utiliser</h3>
+                <p className="text-gray-400">5 minutes pour créer votre premier devis. Pas besoin d'être techno.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-20 text-center">
+          <h2 className="text-3xl font-bold mb-6">Prêt à augmenter vos ventes ?</h2>
+          <p className="text-gray-400 mb-8 text-lg">Testez gratuitement. Aucune carte bancaire requise.</p>
+          <button
+            onClick={() => setShowAuth(true)}
+            className="bg-green-600 hover:bg-green-700 px-8 py-4 rounded-lg font-bold text-lg transition shadow-lg"
+          >
+            Créer un compte gratuit
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Auth Modal
+  if (!user && showAuth) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
         <div className="bg-gray-800 p-8 rounded-lg max-w-md w-full">
+          <button
+            onClick={() => setShowAuth(false)}
+            className="text-gray-400 hover:text-white mb-4"
+          >
+            ← Retour
+          </button>
           <h1 className="text-3xl font-bold mb-6 text-center">Relance Devis</h1>
           <form onSubmit={handleAuth} className="space-y-4">
             <input
@@ -183,6 +257,7 @@ export default function Home() {
     );
   }
 
+  // Dashboard
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
@@ -201,16 +276,16 @@ export default function Home() {
 
         {/* Dashboard Analytics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-yellow-600 bg-opacity-20 border border-yellow-600 p-4 rounded">
-            <p className="text-gray-300 text-sm">En attente</p>
+          <div className="bg-gray-800 p-6 rounded-lg">
+            <p className="text-gray-400 text-sm mb-2">En attente</p>
             <p className="text-3xl font-bold text-yellow-400">{analytics.pending.toFixed(2)}€</p>
           </div>
-          <div className="bg-green-600 bg-opacity-20 border border-green-600 p-4 rounded">
-            <p className="text-gray-300 text-sm">Acceptés</p>
+          <div className="bg-gray-800 p-6 rounded-lg">
+            <p className="text-gray-400 text-sm mb-2">Acceptés</p>
             <p className="text-3xl font-bold text-green-400">{analytics.accepted.toFixed(2)}€</p>
           </div>
-          <div className="bg-red-600 bg-opacity-20 border border-red-600 p-4 rounded">
-            <p className="text-gray-300 text-sm">Refusés</p>
+          <div className="bg-gray-800 p-6 rounded-lg">
+            <p className="text-gray-400 text-sm mb-2">Refusés</p>
             <p className="text-3xl font-bold text-red-400">{analytics.refused.toFixed(2)}€</p>
           </div>
         </div>
@@ -281,35 +356,31 @@ export default function Home() {
               <p className="text-gray-400">Aucun devis</p>
             ) : (
               quotes.map((quote) => (
-                <div key={quote.id} className="bg-gray-800 p-4 rounded flex flex-col gap-3">
-                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                    <div className="flex-1">
-                      <p className="font-bold text-lg">{quote.prospect_name}</p>
-                      <p className="text-gray-400 text-sm">{quote.amount}€ - {quote.sent_date}</p>
-                      <p className="text-gray-400 text-sm">Email: {quote.contact_email}</p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                      <select
-                        value={quote.status}
-                        onChange={(e) => updateStatus(quote.id, e.target.value)}
-                        className={`px-3 py-1 rounded text-sm font-bold ${
-                          quote.status === 'pending' ? 'bg-yellow-600' :
-                          quote.status === 'accepted' ? 'bg-green-600' :
-                          'bg-red-600'
-                        }`}
-                      >
-                        <option value="pending">En attente</option>
-                        <option value="accepted">Accepté</option>
-                        <option value="refused">Refusé</option>
-                      </select>
-                      <button
-                        onClick={() => deleteQuote(quote.id)}
-                        className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
-                      >
-                        Supprimer
-                      </button>
-                    </div>
+                <div key={quote.id} className="bg-gray-800 p-4 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex-1">
+                    <p className="font-bold">{quote.prospect_name}</p>
+                    <p className="text-gray-400 text-sm">{quote.amount}€ - {quote.sent_date}</p>
+                    <p className="text-gray-400 text-sm">Email: {quote.contact_email}</p>
                   </div>
+                  <select
+                    value={quote.status}
+                    onChange={(e) => updateStatus(quote.id, e.target.value)}
+                    className={`px-3 py-1 rounded text-sm font-bold ${
+                      quote.status === 'pending' ? 'bg-yellow-600' :
+                      quote.status === 'accepted' ? 'bg-green-600' :
+                      'bg-red-600'
+                    }`}
+                  >
+                    <option value="pending">En attente</option>
+                    <option value="accepted">Accepté</option>
+                    <option value="refused">Refusé</option>
+                  </select>
+                  <button
+                    onClick={() => deleteQuote(quote.id)}
+                    className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
+                  >
+                    Supprimer
+                  </button>
                 </div>
               ))
             )}
