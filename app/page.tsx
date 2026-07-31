@@ -149,12 +149,12 @@ export default function Home() {
       <div className="min-h-screen bg-gray-900 text-white">
         {/* Hero Section */}
         <div className="relative overflow-hidden">
-          <div className="max-w-6xl mx-auto px-4 sm:px-8 py-20 sm:py-32">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 py-16 sm:py-24">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-5xl sm:text-6xl font-bold mb-6">
+              <h1 className="text-4xl sm:text-5xl font-bold mb-6">
                 Relancez vos devis automatiquement
               </h1>
-              <p className="text-xl text-gray-400 mb-8">
+              <p className="text-lg sm:text-xl text-gray-400 mb-8">
                 Arrêtez de perdre des ventes à cause des oublis. Relancez vos prospects automatiquement à J+3 et J+7. Convertissez plus, sans effort.
               </p>
               <button
