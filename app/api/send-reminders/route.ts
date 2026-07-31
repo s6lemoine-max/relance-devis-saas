@@ -8,6 +8,10 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
+// MODE TEST : seuils en minutes au lieu de jours
+const FIRST_REMINDER_THRESHOLD_MINUTES = 2;
+const SECOND_REMINDER_THRESHOLD_MINUTES = 5;
+
 export async function POST() {
   try {
     const { data: quotes, error } = await supabase
@@ -23,14 +27,16 @@ export async function POST() {
 
     for (const quote of quotes) {
       const createdDate = new Date(quote.created_at);
-      const daysSinceCreated = Math.floor(
-        (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
+      const minutesSinceCreated = Math.floor(
+        (today.getTime() - createdDate.getTime()) / (1000 * 60)
       );
 
       if (!quote.contact_email) continue;
-      if (daysSinceCreated !== 3 && daysSinceCreated !== 7) continue;
-      if (daysSinceCreated === 3 && quote.first_reminder_sent) continue;
-      if (daysSinceCreated === 7 && quote.second_reminder_sent) continue;
+
+      const isFirstDue = minutesSinceCreated >= FIRST_REMINDER_THRESHOLD_MINUTES && !quote.first_reminder_sent;
+      const isSecondDue = minutesSinceCreated >= SECOND_REMINDER_THRESHOLD_MINUTES && !quote.second_reminder_sent;
+
+      if (!isFirstDue && !isSecondDue) continue;
 
       // Récupère les infos de l'artisan (nom entreprise + email pour reply-to)
       const { data: artisanData, error: artisanError } = await supabase.auth.admin.getUserById(quote.user_id);
@@ -50,8 +56,8 @@ export async function POST() {
 
       const formattedDate = new Date(quote.sent_date + 'T00:00:00').toLocaleDateString('fr-FR');
 
-      // 1ère relance à J+3
-      if (daysSinceCreated === 3) {
+      // 1ère relance
+      if (isFirstDue) {
         await resend.emails.send({
           from: 'DevisTrack <onboarding@resend.dev>',
           to: quote.contact_email,
@@ -72,10 +78,11 @@ export async function POST() {
           .eq('id', quote.id);
 
         sent++;
+        continue;
       }
 
-      // 2e relance à J+7
-      if (daysSinceCreated === 7) {
+      // 2e relance
+      if (isSecondDue) {
         await resend.emails.send({
           from: 'DevisTrack <onboarding@resend.dev>',
           to: quote.contact_email,
